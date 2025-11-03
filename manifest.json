@@ -1,0 +1,110 @@
+{
+  "name": "statsig-mcp",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for Statsig integration",
+  "author": "Statsig MCP Team",
+  "license": "MIT",
+  "homepage": "https://github.com/statsig-io/mcp-statsig",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/statsig-io/mcp-statsig.git"
+  },
+  "mcpServers": {
+    "statsig": {
+      "command": "python",
+      "args": [
+        "-m",
+        "uvicorn",
+        "main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "env": {
+        "STATSIG_API_KEY": "${STATSIG_API_KEY}"
+      }
+    },
+    "statsig-local": {
+      "url": "http://127.0.0.1:8000",
+      "env": {
+        "STATSIG_API_KEY": "${STATSIG_API_KEY}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "get_feature_gate_value",
+      "description": "Get the value of a specific feature gate",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "feature_gate_name": {
+            "type": "string",
+            "description": "Name of the feature gate to retrieve"
+          }
+        },
+        "required": ["feature_gate_name"]
+      }
+    },
+    {
+      "name": "list_feature_gates",
+      "description": "List all available feature gates",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "list_experiments",
+      "description": "List all available experiments",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_experiment",
+      "description": "Get details of a specific experiment",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "experiment_name": {
+            "type": "string",
+            "description": "Name of the experiment to retrieve"
+          }
+        },
+        "required": ["experiment_name"]
+      }
+    }
+  ],
+  "resources": [],
+  "prompts": [],
+  "configuration": {
+    "required": [
+      "STATSIG_API_KEY"
+    ],
+    "optional": {
+      "STATSIG_BASE_URL": {
+        "description": "Statsig API base URL",
+        "default": "https://statsigapi.net/console/v1"
+      },
+      "PORT": {
+        "description": "Port for the FastAPI server",
+        "default": "8000"
+      }
+    }
+  },
+  "endpoints": {
+    "base": "http://127.0.0.1:8000",
+    "tools": {
+      "list_feature_gates": "/tools/list_feature_gates",
+      "get_feature_gate_value": "/tools/get_feature_gate_value",
+      "list_experiments": "/tools/list_experiments",
+      "get_experiment": "/tools/get_experiment"
+    },
+    "docs": "/docs",
+    "health": "/health"
+  }
+}
+

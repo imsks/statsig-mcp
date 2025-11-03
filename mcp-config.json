@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "statsig": {
+      "command": "python",
+      "args": [
+        "-m",
+        "uvicorn",
+        "main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "env": {
+        "STATSIG_API_KEY": "console-YOUR-API-KEY-HERE"
+      }
+    }
+  }
+}
+

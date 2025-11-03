@@ -15,18 +15,19 @@ app = FastAPI(
 mcp = FastMCP("statsig-mcp")
 
 STATSIG_API_KEY = os.getenv("STATSIG_API_KEY")
+print(f"STATSIG_API_KEY: {STATSIG_API_KEY}")
 
 if not STATSIG_API_KEY:
     raise ValueError("STATSIG_API_KEY environment variable is required")
 
+# Statsig API uses statsig-api-key header (not Authorization Bearer)
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {STATSIG_API_KEY}",
     "statsig-api-key": STATSIG_API_KEY
 }
 
 # Base URL for Statsig API
-STATSIG_BASE_URL = "https://api.statsig.com/v1"
+STATSIG_BASE_URL = "https://statsigapi.net/console/v1"
 
 # Helper function to make Statsig API requests
 def make_statsig_request(endpoint: str, method: str = "GET", data: Dict = None) -> Any:
@@ -43,12 +44,24 @@ def make_statsig_request(endpoint: str, method: str = "GET", data: Dict = None) 
         response.raise_for_status()
         return response.json()
     except requests.exceptions.HTTPError as e:
-        if response.status_code == 404:
+        error_detail = f"Statsig API error: {response.status_code}"
+        try:
+            error_body = response.json()
+            error_detail = f"{error_detail} - {error_body}"
+        except:
+            error_detail = f"{error_detail} - {response.text}"
+        
+        if response.status_code == 403:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Forbidden: {error_detail}. Check your API key format (should be 'console-YOUR-API-KEY') and permissions."
+            )
+        elif response.status_code == 404:
             raise HTTPException(status_code=404, detail=f"Resource not found: {endpoint}")
         elif response.status_code == 401:
-            raise HTTPException(status_code=401, detail="Invalid API key or unauthorized")
+            raise HTTPException(status_code=401, detail=f"Unauthorized: {error_detail}. Check your API key is valid.")
         else:
-            raise HTTPException(status_code=response.status_code, detail=str(e))
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Statsig API error: {str(e)}")
 
