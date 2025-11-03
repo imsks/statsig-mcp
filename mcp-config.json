@@ -1,4 +1,5 @@
 {
+  "_comment": "MCP client configuration. STATSIG_API_KEY can be loaded from .env file OR passed via env here.",
   "mcpServers": {
     "statsig": {
       "command": "python",
@@ -11,6 +12,7 @@
         "--port",
         "8000"
       ],
+      "_env_note": "Optional: If not using .env file, uncomment and set STATSIG_API_KEY below",
       "env": {
         "STATSIG_API_KEY": "console-YOUR-API-KEY-HERE"
       }

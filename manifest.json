@@ -20,16 +20,10 @@
         "127.0.0.1",
         "--port",
         "8000"
-      ],
-      "env": {
-        "STATSIG_API_KEY": "${STATSIG_API_KEY}"
-      }
+      ]
     },
     "statsig-local": {
-      "url": "http://127.0.0.1:8000",
-      "env": {
-        "STATSIG_API_KEY": "${STATSIG_API_KEY}"
-      }
+      "url": "http://127.0.0.1:8000"
     }
   },
   "tools": [
@@ -81,6 +75,7 @@
   "resources": [],
   "prompts": [],
   "configuration": {
+    "note": "STATSIG_API_KEY is loaded from .env file via python-dotenv. Create a .env file in the project root with: STATSIG_API_KEY=console-YOUR-API-KEY",
     "required": [
       "STATSIG_API_KEY"
     ],
