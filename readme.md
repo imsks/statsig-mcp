@@ -1,6 +1,8 @@
 # Statsig MCP Server
 
-A Model Context Protocol (MCP) server for integrating Statsig feature flags, experiments, and configurations via FastAPI.
+A Model Context Protocol (MCP) server for integrating Statsig feature flags, experiments, and configurations.
+
+**⚠️ Important**: This is an MCP server that communicates via **stdio** (not HTTP). It's designed to be used with Cursor or other MCP-compatible clients.
 
 ## Quick Start
 
@@ -8,8 +10,8 @@ A Model Context Protocol (MCP) server for integrating Statsig feature flags, exp
 
 ```bash
 # Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -21,71 +23,48 @@ Create a `.env` file in the project root:
 
 ```env
 STATSIG_API_KEY=console-YOUR-API-KEY
+STATSIG_BASE_URL=https://statsigapi.net/console/v1  # Optional, defaults to this
 ```
 
 Get your API key from [Statsig Console](https://console.statsig.com/).
 
-### 3. Run Server
+### 3. Test Server Locally
 
 ```bash
-uvicorn main:app --reload
+python main.py
 ```
 
-Server runs at: `http://127.0.0.1:8000`
+The server will start and wait for stdio input (this is normal for MCP servers). Press Ctrl+C to stop.
 
 ## Usage
 
-### Available Endpoints
+### Available MCP Tools
 
-- **Health Check**: `GET /health`
-- **API Docs**: `http://127.0.0.1:8000/docs` (Interactive Swagger UI)
+The server provides the following MCP tools:
 
-### Tools
+1. **`list_feature_gates`** - List all available feature gates
+2. **`get_feature_gate_value`** - Get the value of a specific feature gate
+3. **`list_experiments`** - List all available experiments
+4. **`get_experiment`** - Get details of a specific experiment
 
-#### List Feature Gates
-```bash
-curl http://127.0.0.1:8000/tools/list_feature_gates
-```
-
-#### Get Feature Gate Value
-```bash
-curl "http://127.0.0.1:8000/tools/get_feature_gate_value?feature_gate_name=YOUR_GATE_NAME"
-```
-
-#### List Experiments
-```bash
-curl http://127.0.0.1:8000/tools/list_experiments
-```
-
-#### Get Experiment Details
-```bash
-curl "http://127.0.0.1:8000/tools/get_experiment?experiment_name=YOUR_EXPERIMENT_NAME"
-```
+These tools are available in Cursor chat when the MCP server is properly configured.
 
 ## Adding to Cursor
 
-### Steps
+**📖 See [MCP_SETUP_GUIDE.md](./MCP_SETUP_GUIDE.md) for detailed setup instructions and troubleshooting.**
 
-1. **Open Cursor Settings**: `Settings` → `Tools & MCP` → `Edit Config`
+### Quick Steps
 
-2. **Copy Configuration**: Open `cursor-mcp-config.json` in this project and copy the entire JSON
+1. **Open Cursor MCP Config**: `Settings` → `Tools & MCP` → `Edit Config`
 
-3. **Update Path**: Replace `/YOUR/PATH/TO/statsig-mcp` with your actual project path
+2. **Add Your Server Configuration**:
 
 ```json
 {
   "mcpServers": {
     "statsig": {
       "command": "python",
-      "args": [
-        "-m",
-        "uvicorn",
-        "main:app",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8000"
-      ],
+      "args": ["main.py"],
       "cwd": "/path/to/statsig-mcp",
       "env": {
         "STATSIG_API_KEY": "console-YOUR-API-KEY"
@@ -95,33 +74,22 @@ curl "http://127.0.0.1:8000/tools/get_experiment?experiment_name=YOUR_EXPERIMENT
 }
 ```
 
-3. **Update Configuration**:
-   - Replace `/path/to/statsig-mcp` with the actual path to this project directory
-   - Replace `console-YOUR-API-KEY` with your Statsig API key (or remove `env` section if using `.env` file)
-   - Ensure Python and uvicorn are available in your PATH
+**Important Notes:**
+- ✅ Use `"python main.py"` (not `uvicorn`)
+- ✅ Replace `/path/to/statsig-mcp` with your actual project path
+- ✅ Replace `console-YOUR-API-KEY` with your Statsig API key
+- ✅ If using virtual environment, use full path to venv's Python: `"/path/to/statsig-mcp/venv/bin/python"`
 
-4. **Restart Cursor**:
-   - Restart Cursor to load the new MCP server
-   - Verify it appears in the MCP section
+### Using .env File (Alternative)
 
-### Method 2: Using .env File
-
-If you prefer using the `.env` file (already set up), you can omit the `env` section:
+If you prefer using the `.env` file, you can omit the `env` section:
 
 ```json
 {
   "mcpServers": {
     "statsig": {
       "command": "python",
-      "args": [
-        "-m",
-        "uvicorn",
-        "main:app",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8000"
-      ],
+      "args": ["main.py"],
       "cwd": "/path/to/statsig-mcp"
     }
   }
@@ -129,6 +97,10 @@ If you prefer using the `.env` file (already set up), you can omit the `env` sec
 ```
 
 The API key will be automatically loaded from your `.env` file in the project directory.
+
+3. **Restart Cursor**:
+   - Restart Cursor completely to load the new MCP server
+   - Verify it appears in the MCP section (`Settings` → `Tools & MCP`)
 
 ### Verify Integration
 
@@ -153,18 +125,6 @@ Once configured, you can use Statsig MCP tools directly in Cursor chat:
    - Use the `list_experiments` MCP tool
    - Display the results in chat
 
-### Test via HTTP (Alternative Method)
-
-If you want to test the HTTP endpoint directly:
-
-```bash
-# Make sure server is running first
-uvicorn main:app --reload
-
-# Then in another terminal:
-curl http://127.0.0.1:8000/tools/list_experiments
-```
-
 ### Verify MCP Server is Running
 
 1. **Check Cursor MCP Status**:
@@ -172,15 +132,18 @@ curl http://127.0.0.1:8000/tools/list_experiments
    - Verify "statsig" appears in the list
    - Status should show as "connected" or "running"
 
-2. **Check Server Logs**:
-   - When Cursor calls the MCP tool, you should see logs in the terminal where uvicorn is running
-   - Look for incoming requests
-
-3. **Health Check**:
+2. **Test Manually**:
    ```bash
-   curl http://127.0.0.1:8000/health
+   python main.py
    ```
-   Should return: `{"status":"healthy","service":"statsig-mcp"}`
+   - Should start without errors
+   - Will appear "hung" (waiting for stdio input) - this is normal!
+   - Press Ctrl+C to stop
+
+3. **Test in Cursor Chat**:
+   - Open Cursor Chat (Cmd+L or Ctrl+L)
+   - Ask: "List all my Statsig experiments"
+   - Cursor should use the MCP tool and display results
 
 ### Troubleshooting
 
@@ -206,9 +169,25 @@ curl http://127.0.0.1:8000/tools/list_experiments
 
 ```
 statsig-mcp/
-├── main.py              # FastAPI server and MCP tools
-├── requirements.txt     # Python dependencies
-├── .env                 # Environment variables (create this)
-├── manifest.json        # MCP server metadata
-└── readme.md           # This file
+├── main.py                  # MCP server implementation
+├── requirements.txt         # Python dependencies
+├── .env                     # Environment variables (create this)
+├── manifest.json            # MCP server metadata (tools documentation)
+├── MCP_SETUP_GUIDE.md       # Detailed setup guide and troubleshooting
+└── readme.md               # This file
 ```
+
+## Key Differences from Statsig Official Server
+
+| Feature | Statsig Official (`statsig-local`) | Your Custom Server (`statsig`) |
+|---------|-----------------------------------|--------------------------------|
+| **Base URL** | `https://api.statsig.com/v1/mcp` | `https://statsigapi.net/console/v1` (configurable) |
+| **Implementation** | Statsig's MCP endpoint | Your own implementation |
+| **Control** | Limited | Full control |
+| **Customization** | None | Full customization |
+
+**Why use your own server?**
+- Use different Statsig API endpoints
+- Full control over implementation
+- Customize tools and functionality
+- Multi-product support (different servers for different products)
