@@ -25,7 +25,8 @@ STATSIG_API_KEY = os.getenv("STATSIG_API_KEY")
 STATSIG_BASE_URL = os.getenv("STATSIG_BASE_URL", "https://statsigapi.net/console/v1")
 
 if not STATSIG_API_KEY:
-    logger.error("✗ STATSIG_API_KEY environment variable is required")
+    # Write error to stderr, not stdout
+    print("ERROR: STATSIG_API_KEY environment variable is required", file=sys.stderr)
     sys.exit(1)
 
 # Statsig API uses statsig-api-key header
